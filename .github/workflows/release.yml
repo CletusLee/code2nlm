@@ -42,8 +42,8 @@ jobs:
             "linux amd64 x86_64-linux-gnu"
             "linux arm64 aarch64-linux-gnu"
             "windows amd64 x86_64-windows-gnu"
-            "darwin amd64 x86_64-macos-gnu"
-            "darwin arm64 aarch64-macos-gnu"
+            "darwin amd64 x86_64-macos"
+            "darwin arm64 aarch64-macos"
           )
 
           mkdir -p dist
@@ -57,8 +57,10 @@ jobs:
               EXTENSION=".exe"
             fi
 
-            # Cross-compile using Zig as the C compiler
-            GOOS=$os GOARCH=$arch CC="zig cc -target $zig_target" \
+            # Cross-compile using Zig as both the C and C++ compiler
+            GOOS=$os GOARCH=$arch \
+            CC="zig cc -target $zig_target" \
+            CXX="zig c++ -target $zig_target" \
             go build -trimpath -o "dist/code2nlm-${os}-${arch}${EXTENSION}" .
           done
 
