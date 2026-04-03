@@ -74,8 +74,6 @@ Go to the [**Releases page**](https://github.com/YOUR_ORG/code2nlm/releases) and
 | Windows (64-bit) | `code2nlm-windows-amd64.exe` |
 | Linux (64-bit) | `code2nlm-linux-amd64` |
 | Linux (ARM64) | `code2nlm-linux-arm64` |
-| macOS (Intel) | `code2nlm-darwin-amd64` |
-| macOS (Apple Silicon) | `code2nlm-darwin-arm64` |
 
 **Windows:**
 ```powershell
@@ -85,7 +83,7 @@ Rename-Item code2nlm-windows-amd64.exe code2nlm.exe
 .\code2nlm.exe --help
 ```
 
-**Linux / macOS:**
+**Linux:**
 ```bash
 chmod +x code2nlm-linux-amd64
 sudo mv code2nlm-linux-amd64 /usr/local/bin/code2nlm
@@ -224,7 +222,8 @@ The output format is generic Markdown and works with any LLM or RAG stack.
 For small projects, you can concatenate all chunks directly into a prompt:
 
 ```bash
-cat nlm_output/*.md | pbcopy  # macOS: copies to clipboard
+cat nlm_output/*.md | clip  # Copies to clipboard (Windows CLI)
+# or ... | pbcopy on some Linux environments
 ```
 
 ### RAG Pipeline Integration
@@ -335,9 +334,11 @@ go test -v ./...
 # Build for current platform
 go build -o code2nlm .
 
-# Cross-compile for Windows from Linux/macOS (requires Zig)
-GOOS=windows GOARCH=amd64 CC="zig cc -target x86_64-windows-gnu" \
-  CGO_ENABLED=1 go build -o code2nlm-windows-amd64.exe .
+# Cross-compile for Windows from Linux (requires Zig)
+GOOS=windows GOARCH=amd64 \
+  CC="zig cc -target x86_64-windows-gnu" \
+  CXX="zig c++ -target x86_64-windows-gnu" \
+  CGO_ENABLED=1 go build -trimpath -o code2nlm-windows-amd64.exe .
 ```
 
 The CI/CD pipeline (`.github/workflows/release.yml`) automatically builds binaries for all supported platforms when a version tag is pushed:

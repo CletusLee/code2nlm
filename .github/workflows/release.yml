@@ -42,8 +42,6 @@ jobs:
             "linux amd64 x86_64-linux-gnu"
             "linux arm64 aarch64-linux-gnu"
             "windows amd64 x86_64-windows-gnu"
-            "darwin amd64 x86_64-macos"
-            "darwin arm64 aarch64-macos"
           )
 
           mkdir -p dist
