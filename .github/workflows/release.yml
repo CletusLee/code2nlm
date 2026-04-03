@@ -1,0 +1,68 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: '1.21'
+
+      - name: Install Zig
+        uses: mlugg/setup-zig@v1
+        with:
+          version: 0.11.0
+
+      - name: Run Tests
+        run: go test -v ./...
+
+      - name: Build Binaries
+        env:
+          CGO_ENABLED: 1
+        run: |
+          # Define targets
+          # Format: GOOS, GOARCH, ZIG_TARGET
+          targets=(
+            "linux amd64 x86_64-linux-gnu"
+            "linux arm64 aarch64-linux-gnu"
+            "windows amd64 x86_64-windows-gnu"
+            "darwin amd64 x86_64-macos-gnu"
+            "darwin arm64 aarch64-macos-gnu"
+          )
+
+          mkdir -p dist
+
+          for target in "${targets[@]}"; do
+            read -r os arch zig_target <<< "$target"
+            echo "Building for $os/$arch..."
+            
+            EXTENSION=""
+            if [ "$os" == "windows" ]; then
+              EXTENSION=".exe"
+            fi
+
+            # Cross-compile using Zig as the C compiler
+            GOOS=$os GOARCH=$arch CC="zig cc -target $zig_target" \
+            go build -trimpath -o "dist/code2nlm-${os}-${arch}${EXTENSION}" .
+          done
+
+      - name: Release
+        uses: softprops/action-gh-release@v2
+        if: startsWith(github.ref, 'refs/tags/')
+        with:
+          files: dist/*
+          generate_release_notes: true
