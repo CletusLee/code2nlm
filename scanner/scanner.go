@@ -61,8 +61,8 @@ func ScanDirectory(fs afero.Fs, root string, ignoreFilePath string) (int64, []st
 		if !info.IsDir() {
 			// Fast byte accumulation strategy avoiding file read
 			totalBytes += info.Size()
-			// Use ToSlash to normalize paths to POSIX style for tree
-			virtualTree = append(virtualTree, filepath.ToSlash(relPath))
+			// Use robust normalization to POSIX style for tree
+			virtualTree = append(virtualTree, strings.ReplaceAll(relPath, "\\", "/"))
 		}
 
 		return nil

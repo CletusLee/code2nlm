@@ -10,14 +10,15 @@ import (
 
 // GenerateIndex creates the 000_Project_Index.md file based on the virtual tree
 func GenerateIndex(fs afero.Fs, outpuDir string, virtualTree []string) error {
-	// Ensure output formatting uses ToSlash
-	outDirNorm := filepath.ToSlash(outpuDir)
+	// Robust normalization: filepath.ToSlash() on Linux is a no-op for backslashes.
+	// Force all backslashes to forward slashes for cross-platform consistency.
+	outDirNorm := strings.ReplaceAll(outpuDir, "\\", "/")
 	err := fs.MkdirAll(outDirNorm, 0755)
 	if err != nil {
 		return err
 	}
 
-	indexPath := filepath.ToSlash(filepath.Join(outDirNorm, "000_Project_Index.md"))
+	indexPath := strings.ReplaceAll(filepath.Join(outDirNorm, "000_Project_Index.md"), "\\", "/")
 	
 	var sb strings.Builder
 	sb.WriteString("# Project Index\n\n")
@@ -25,7 +26,7 @@ func GenerateIndex(fs afero.Fs, outpuDir string, virtualTree []string) error {
 
 	for _, p := range virtualTree {
 		// Paths are already normalized in scanner, but we ensure output string is clean
-		sb.WriteString(fmt.Sprintf("- `%s`\n", p))
+		sb.WriteString(fmt.Sprintf("- `%s`\n", strings.ReplaceAll(p, "\\", "/")))
 	}
 
 	return afero.WriteFile(fs, indexPath, []byte(sb.String()), 0644)
@@ -46,7 +47,7 @@ func FormatContextualHeader(domainName string, part int, totalParts int, project
 	
 	sb.WriteString("## Included Paths in this Chunk\n")
 	for _, p := range paths {
-		sb.WriteString(fmt.Sprintf("* `%s`\n", filepath.ToSlash(p)))
+		sb.WriteString(fmt.Sprintf("* `%s`\n", strings.ReplaceAll(p, "\\", "/")))
 	}
 	sb.WriteString("\n---\n\n")
 	return sb.String()

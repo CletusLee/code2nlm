@@ -41,7 +41,7 @@ func (c *Chunker) Process(virtualTree []string) error {
 		count := prefixCounts[prefix]
 
 		fileName := fmt.Sprintf("%s_%03d.md", prefix, count)
-		filePath := filepath.ToSlash(filepath.Join(c.OutputPath, fileName))
+		filePath := strings.ReplaceAll(filepath.Join(c.OutputPath, fileName), "\\", "/")
 
 		header := markdown.FormatContextualHeader(prefix, count, -1, c.ProjectName, currentPaths)
 		finalContent := header + currentContent.String()
@@ -88,7 +88,7 @@ func (c *Chunker) Process(virtualTree []string) error {
 					}
 					
 					c.addPath(&currentPaths, path)
-					currentContent.WriteString(fmt.Sprintf("\n### File: `%s`\n\n```\n%s\n```\n", filepath.ToSlash(path), part))
+					currentContent.WriteString(fmt.Sprintf("\n### File: `%s`\n\n```\n%s\n```\n", strings.ReplaceAll(path, "\\", "/"), part))
 					currentWords += partWords
 				}
 				continue
@@ -96,7 +96,7 @@ func (c *Chunker) Process(virtualTree []string) error {
 		}
 
 		c.addPath(&currentPaths, path)
-		currentContent.WriteString(fmt.Sprintf("\n### File: `%s`\n\n```\n%s\n```\n", filepath.ToSlash(path), contentStr))
+		currentContent.WriteString(fmt.Sprintf("\n### File: `%s`\n\n```\n%s\n```\n", strings.ReplaceAll(path, "\\", "/"), contentStr))
 		currentWords += words
 	}
 
