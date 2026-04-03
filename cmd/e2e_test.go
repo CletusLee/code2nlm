@@ -28,7 +28,7 @@ func TestE2E_CLI(t *testing.T) {
 	}
 
 	// 3. Verify Index exists and has paths
-	indexPath := filepath.ToSlash(filepath.Join(OutputPath, "00_Project_Index.md"))
+	indexPath := filepath.ToSlash(filepath.Join(OutputPath, "000_Project_Index.md"))
 	exists, err := afero.Exists(FS, indexPath)
 	if err != nil || !exists {
 		t.Fatalf("Index file %s missing", indexPath)
@@ -40,16 +40,19 @@ func TestE2E_CLI(t *testing.T) {
 	}
 
 	// 4. Verify Chunk generation and context headers
-	chunk1Path := filepath.ToSlash(filepath.Join(OutputPath, "01_chunk.md"))
+	chunk1Path := filepath.ToSlash(filepath.Join(OutputPath, "src_001.md"))
 	exists, err = afero.Exists(FS, chunk1Path)
 	if err != nil || !exists {
-		t.Fatalf("First chunk file missing")
+		t.Fatalf("First chunk file missing (expected src_001.md)")
 	}
 
 	chunkContent, _ := afero.ReadFile(FS, chunk1Path)
 	contentStr := string(chunkContent)
-	if !strings.Contains(contentStr, "# Module: Global") {
-		t.Errorf("Missing contextual module header")
+	if !strings.Contains(contentStr, "# Module: src") {
+		t.Errorf("Missing contextual module header 'src', got: %s", contentStr)
+	}
+	if !strings.Contains(contentStr, "000_Project_Index.md") {
+		t.Errorf("Missing reference to 000_Project_Index.md")
 	}
 	if !strings.Contains(contentStr, "src/main.go") || !strings.Contains(contentStr, "src/utils.go") {
 		t.Errorf("Missing included paths context in chunk header")

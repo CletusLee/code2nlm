@@ -8,7 +8,7 @@ import (
 	"github.com/spf13/afero"
 )
 
-// GenerateIndex creates the 00_Project_Index.md file based on the virtual tree
+// GenerateIndex creates the 000_Project_Index.md file based on the virtual tree
 func GenerateIndex(fs afero.Fs, outpuDir string, virtualTree []string) error {
 	// Ensure output formatting uses ToSlash
 	outDirNorm := filepath.ToSlash(outpuDir)
@@ -17,7 +17,7 @@ func GenerateIndex(fs afero.Fs, outpuDir string, virtualTree []string) error {
 		return err
 	}
 
-	indexPath := filepath.ToSlash(filepath.Join(outDirNorm, "00_Project_Index.md"))
+	indexPath := filepath.ToSlash(filepath.Join(outDirNorm, "000_Project_Index.md"))
 	
 	var sb strings.Builder
 	sb.WriteString("# Project Index\n\n")
@@ -42,7 +42,7 @@ func FormatContextualHeader(domainName string, part int, totalParts int, project
 
 	sb.WriteString(fmt.Sprintf("# Module: %s%s\n", domainName, partStr))
 	sb.WriteString(fmt.Sprintf("**Project**: %s\n", projectName))
-	sb.WriteString("**Global Context**: Please refer to `00_Project_Index.md` for the complete directory structure and dependency map.\n\n")
+	sb.WriteString("**Global Context**: Please refer to `000_Project_Index.md` for the complete directory structure and dependency map.\n\n")
 	
 	sb.WriteString("## Included Paths in this Chunk\n")
 	for _, p := range paths {

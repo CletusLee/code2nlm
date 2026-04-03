@@ -27,11 +27,11 @@ func TestMultiPartChunking(t *testing.T) {
 	}
 
 	// Verify chunks
-	// Chunker.Process should emit 01_chunk.md, 02_chunk.md...
+	// Chunker.Process should emit global_001.md, global_002.md...
 	files, _ := afero.ReadDir(FS, OutputPath)
 	count := 0
 	for _, f := range files {
-		if strings.HasSuffix(f.Name(), "_chunk.md") {
+		if strings.HasSuffix(f.Name(), ".md") && strings.Contains(f.Name(), "_00") {
 			count++
 		}
 	}
@@ -57,11 +57,11 @@ func TestSmallFileGrouping(t *testing.T) {
 		t.Fatalf("Unexpected error: %v", err)
 	}
 
-	// Should be grouped into 01_chunk.md
-	chunkPath := filepath.ToSlash(filepath.Join(OutputPath, "01_chunk.md"))
+	// Should be grouped into global_001.md
+	chunkPath := filepath.ToSlash(filepath.Join(OutputPath, "global_001.md"))
 	exists, _ := afero.Exists(FS, chunkPath)
 	if !exists {
-		t.Fatalf("Expected 01_chunk.md to exist")
+		t.Fatalf("Expected global_001.md to exist")
 	}
 
 	content, _ := afero.ReadFile(FS, chunkPath)
@@ -86,7 +86,7 @@ func TestPathNormalizationDeep(t *testing.T) {
 
 	runChunking()
 
-	indexPath := filepath.ToSlash(filepath.Join(OutputPath, "00_Project_Index.md"))
+	indexPath := filepath.ToSlash(filepath.Join(OutputPath, "000_Project_Index.md"))
 	idx, _ := afero.ReadFile(FS, indexPath)
 	
 	if strings.Contains(string(idx), "\\") {

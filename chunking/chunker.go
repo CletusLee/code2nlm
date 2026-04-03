@@ -24,7 +24,7 @@ func CountWords(s string) int {
 
 // Process drives the sequential file chunking stream. (Task 5.1)
 func (c *Chunker) Process(virtualTree []string) error {
-	chunkIndex := 1
+	prefixCounts := make(map[string]int)
 	currentWords := 0
 	var currentPaths []string
 	var currentContent strings.Builder
@@ -34,10 +34,16 @@ func (c *Chunker) Process(virtualTree []string) error {
 			return nil
 		}
 
-		fileName := fmt.Sprintf("%02d_chunk.md", chunkIndex)
+		lca := GetLCA(currentPaths)
+		prefix := NormalizeLCA(lca)
+		
+		prefixCounts[prefix]++
+		count := prefixCounts[prefix]
+
+		fileName := fmt.Sprintf("%s_%03d.md", prefix, count)
 		filePath := filepath.ToSlash(filepath.Join(c.OutputPath, fileName))
 
-		header := markdown.FormatContextualHeader("Global", chunkIndex, -1, c.ProjectName, currentPaths)
+		header := markdown.FormatContextualHeader(prefix, count, -1, c.ProjectName, currentPaths)
 		finalContent := header + currentContent.String()
 
 		err := afero.WriteFile(c.FS, filePath, []byte(finalContent), 0644)
@@ -45,7 +51,6 @@ func (c *Chunker) Process(virtualTree []string) error {
 			return err
 		}
 
-		chunkIndex++
 		currentWords = 0
 		currentPaths = nil
 		currentContent.Reset()
