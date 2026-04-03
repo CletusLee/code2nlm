@@ -29,18 +29,20 @@
 
 ## Why code2nlm?
 
-Large language models like Gemini or GPT-4 have finite context windows. You cannot paste an entire codebase into a single prompt. Existing workarounds (e.g., manual copy-paste, custom scripts) are brittle and produce noisy output.
+Google **NotebookLM** is an incredibly powerful tool for reasoning over documents, but it currently lacks a direct integration to "read" an entire GitHub repository. pasting code manually is impossible for large projects, and uploading hundreds of individual source files quickly hits file count limits and creates a fragmented experience.
 
-`code2nlm` solves this by:
+`code2nlm` (Code to NotebookLM) was created to solve this. It transforms a complex directory structure into a small set of densely-packed, logically-named Markdown files that you can upload in seconds.
+
+It solves several core problems:
 
 | Problem | How code2nlm Solves It |
 |---|---|
-| Context window limits | Splits code into configurable token-bounded chunks |
-| Noisy source maps / Base64 blobs | Automatically strips `*.map` URIs and Base64 Data URIs |
-| Hidden files and build artifacts | Respects `.gitignore` (or any custom ignore file) |
-| RAG retrieval ambiguity | Names each chunk after its dominant directory (e.g., `src_utils_001.md`) |
-| Lost navigational context | `000_Project_Index.md` lists every source file with its chunk location |
-| Cross-platform path confusion | Normalizes all paths to forward-slash format |
+| No GitHub Direct Sync in NotebookLM | Converts repos into a "document" format NotebookLM understands |
+| NotebookLM File Count Limits | Packs many source files into a few large, token-efficient chunks |
+| Context Window Overhead | Strips noisy source maps, Base64 blobs, and hidden junk |
+| RAG Retrieval Ambiguity | Names chunks by directory (e.g., `src_utils_001.md`) for spatial context |
+| Lost Navigational Context | Includes a `000_Project_Index.md` master manifest |
+| Cross-platform Paths | Standardizes all paths to POSIX forward-slashes |
 
 ---
 
@@ -95,7 +97,7 @@ code2nlm --help
 Requirements: **Go 1.20+**
 
 ```bash
-git clone https://github.com/YOUR_ORG/code2nlm.git
+git clone https://github.com/CletusLee/code2nlm.git
 cd code2nlm
 go build -o code2nlm .
 ```
@@ -325,7 +327,7 @@ __pycache__/
 
 ```bash
 # Clone repository
-git clone https://github.com/YOUR_ORG/code2nlm.git
+git clone https://github.com/CletusLee/code2nlm.git
 cd code2nlm
 
 # Run tests
@@ -355,7 +357,7 @@ git push origin v1.0.0
 Pull requests are welcome. For major changes, please open an issue first to discuss what you'd like to change.
 
 ```bash
-git clone https://github.com/YOUR_ORG/code2nlm.git
+git clone https://github.com/CletusLee/code2nlm.git
 cd code2nlm
 go test ./...  # must pass before submitting PR
 ```
