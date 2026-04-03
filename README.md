@@ -67,7 +67,7 @@ Your Repo/                         nlm_output/
 
 ### Download a Pre-built Binary
 
-Go to the [**Releases page**](https://github.com/YOUR_ORG/code2nlm/releases) and download the binary for your platform:
+Go to the [**Releases page**](https://github.com/CletusLee/code2nlm/releases) and download the binary for your platform:
 
 | Platform | File |
 |---|---|
