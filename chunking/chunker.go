@@ -13,6 +13,7 @@ import (
 type Chunker struct {
 	FS          afero.Fs
 	MaxWords    int
+	InputPath   string
 	OutputPath  string
 	ProjectName string
 }
@@ -52,13 +53,16 @@ func (c *Chunker) Process(virtualTree []string) error {
 	}
 
 	for _, path := range virtualTree {
-		contentBytes, err := afero.ReadFile(c.FS, path)
+		actualFilePath := filepath.Join(c.InputPath, path)
+		contentBytes, err := afero.ReadFile(c.FS, actualFilePath)
 		if err != nil {
 			continue // Skip unreadable files
 		}
 		
 		contentStr := string(contentBytes)
+		contentStr = DenoiseContent(contentStr)
 		words := CountWords(contentStr)
+		contentBytes = []byte(contentStr) // Update bytes for structural parsing if needed
 
 		if currentWords+words > c.MaxWords {
 			if currentWords > 0 {

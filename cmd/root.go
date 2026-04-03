@@ -5,6 +5,7 @@ import (
 	"math"
 	"os"
 	"path/filepath"
+	"strings"
 
 	"github.com/spf13/afero"
 	"github.com/spf13/cobra"
@@ -27,7 +28,37 @@ var (
 var rootCmd = &cobra.Command{
 	Use:   "code2nlm",
 	Short: "Chunk codebases into LLM-friendly Markdown files",
+	Long: `code2nlm is a fast, local-only CLI tool that transforms entire code repositories 
+into structured Markdown notebooks optimized for LLMs like NotebookLM.
+
+It supports:
+- Automatic path normalization for cross-platform consistency
+- Smart AST-aware chunking for Go (or fallback text-splitting)
+- Gitignore-respecting concurrent directory scanning
+- Dynamic project indexing with spatial context mapping
+- Built-in Denoising: Automatically strips massive inline Source Maps (*.map URIs) and Base64 Data URIs to preserve valuable LLM token context.`,
+	Example: `  # Process current directory into default nlm_output
+  code2nlm
+
+  # Process specific directory with custom word limit
+  code2nlm -i ./src -o ./md_out -w 50000
+
+  # Allow for a larger number of output source files
+  code2nlm -m 300
+
+  # Manual ignore file override
+  code2nlm --ignore-file .nlignore`,
 	RunE: func(cmd *cobra.Command, args []string) error {
+		// If no flags were changed and no arguments provided, show help
+		if !cmd.Flags().Changed("input") &&
+			!cmd.Flags().Changed("output") &&
+			!cmd.Flags().Changed("max-sources") &&
+			!cmd.Flags().Changed("max-words") &&
+			!cmd.Flags().Changed("ignore-file") &&
+			!cmd.Flags().Changed("strategy") &&
+			len(args) == 0 {
+			return cmd.Help()
+		}
 		return runChunking()
 	},
 }
@@ -50,6 +81,10 @@ func init() {
 }
 
 func runChunking() error {
+	// Sanitize paths to fix Windows PowerShell escaping issues where trailing slashes escape closing quotes.
+	InputPath = filepath.Clean(strings.Trim(InputPath, "\" '"))
+	OutputPath = filepath.Clean(strings.Trim(OutputPath, "\" '"))
+
 	totalBytes, virtualTree, err := scanner.ScanDirectory(FS, InputPath, IgnoreFile)
 	if err != nil {
 		return err
@@ -71,6 +106,7 @@ func runChunking() error {
 	c := &chunking.Chunker{
 		FS:          FS,
 		MaxWords:    MaxWords,
+		InputPath:   InputPath,
 		OutputPath:  OutputPath,
 		ProjectName: filepath.Base(filepath.Clean(InputPath)),
 	}
