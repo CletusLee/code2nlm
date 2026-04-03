@@ -1,0 +1,28 @@
+# Binaries and executables
+bin/
+code2nlm
+code2nlm.exe
+*.exe
+*.test
+*.prof
+
+# Project specific output
+nlm_output/
+output/
+
+# Dependencies
+vendor/
+
+# IDE and OS files
+.idea/
+.vscode/
+.DS_Store
+Thumbs.db
+
+# Temporary artifacts from AI/OpenSpec phase
+temp-*
+*.json
+
+# Coverage
+*.out
+coverage.html
