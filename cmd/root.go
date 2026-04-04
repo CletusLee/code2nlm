@@ -90,7 +90,7 @@ func runChunking() error {
 		return err
 	}
 
-	estimatedWords := float64(totalBytes) / 5.0
+	estimatedWords := float64(totalBytes) / 7.5
 	requiredFiles := int(math.Ceil(estimatedWords / float64(MaxWords)))
 
 	if requiredFiles > MaxSources {
@@ -111,5 +111,13 @@ func runChunking() error {
 		ProjectName: filepath.Base(filepath.Clean(InputPath)),
 	}
 
-	return c.Process(virtualTree)
+	filesCreated, err := c.Process(virtualTree)
+	if err != nil {
+		return err
+	}
+
+	fmt.Printf("Successfully created %d markdown files in %s\n", filesCreated, OutputPath)
+	fmt.Printf("Estimated requirement was %d files based on raw byte count.\n", requiredFiles)
+	fmt.Printf("Actual output is lower due to content denoising (source map/base64 removal).\n")
+	return nil
 }

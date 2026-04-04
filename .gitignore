@@ -23,6 +23,9 @@ Thumbs.db
 temp-*
 *.json
 
+# Roo/Windsurf/Cursor plans
+plans/
+
 # Coverage
 *.out
 coverage.html

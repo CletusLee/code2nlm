@@ -23,11 +23,13 @@ func CountWords(s string) int {
 }
 
 // Process drives the sequential file chunking stream. (Task 5.1)
-func (c *Chunker) Process(virtualTree []string) error {
+// Returns the number of files actually created.
+func (c *Chunker) Process(virtualTree []string) (int, error) {
 	prefixCounts := make(map[string]int)
 	currentWords := 0
 	var currentPaths []string
 	var currentContent strings.Builder
+	filesCreated := 0
 
 	flushChunk := func() error {
 		if currentContent.Len() == 0 {
@@ -36,7 +38,7 @@ func (c *Chunker) Process(virtualTree []string) error {
 
 		lca := GetLCA(currentPaths)
 		prefix := NormalizeLCA(lca)
-		
+
 		prefixCounts[prefix]++
 		count := prefixCounts[prefix]
 
@@ -51,6 +53,7 @@ func (c *Chunker) Process(virtualTree []string) error {
 			return err
 		}
 
+		filesCreated++
 		currentWords = 0
 		currentPaths = nil
 		currentContent.Reset()
@@ -63,7 +66,7 @@ func (c *Chunker) Process(virtualTree []string) error {
 		if err != nil {
 			continue // Skip unreadable files
 		}
-		
+
 		contentStr := string(contentBytes)
 		contentStr = DenoiseContent(contentStr)
 		words := CountWords(contentStr)
@@ -72,7 +75,7 @@ func (c *Chunker) Process(virtualTree []string) error {
 		if currentWords+words > c.MaxWords {
 			if currentWords > 0 {
 				if err := flushChunk(); err != nil {
-					return err
+					return 0, err
 				}
 			}
 
@@ -83,10 +86,10 @@ func (c *Chunker) Process(virtualTree []string) error {
 					partWords := CountWords(part)
 					if currentWords+partWords > c.MaxWords && currentWords > 0 {
 						if err := flushChunk(); err != nil {
-							return err
+							return 0, err
 						}
 					}
-					
+
 					c.addPath(&currentPaths, path)
 					currentContent.WriteString(fmt.Sprintf("\n### File: `%s`\n\n```\n%s\n```\n", strings.ReplaceAll(path, "\\", "/"), part))
 					currentWords += partWords
@@ -100,7 +103,10 @@ func (c *Chunker) Process(virtualTree []string) error {
 		currentWords += words
 	}
 
-	return flushChunk()
+	if err := flushChunk(); err != nil {
+		return 0, err
+	}
+	return filesCreated, nil
 }
 
 func (c *Chunker) addPath(paths *[]string, path string) {
