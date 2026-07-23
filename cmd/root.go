@@ -22,6 +22,7 @@ var (
 	MaxWords   int
 	IgnoreFile string
 	Strategy   string
+	ForceExts  []string
 	FS         afero.Fs
 )
 
@@ -38,27 +39,20 @@ It supports:
 - Dynamic project indexing with spatial context mapping
 - Built-in Denoising: Automatically strips massive inline Source Maps (*.map URIs) and Base64 Data URIs to preserve valuable LLM token context.`,
 	Example: `  # Process current directory into default nlm_output
-  code2nlm
+	 code2nlm
 
-  # Process specific directory with custom word limit
-  code2nlm -i ./src -o ./md_out -w 50000
+	 # Process specific directory with custom word limit
+	 code2nlm -i ./src -o ./md_out -w 50000
 
-  # Allow for a larger number of output source files
-  code2nlm -m 300
+	 # Allow for a larger number of output source files
+	 code2nlm -m 300
 
-  # Manual ignore file override
-  code2nlm --ignore-file .nlignore`,
+	 # Manual ignore file override
+	 code2nlm --ignore-file .nlignore
+
+	 # Force-include .json and .lock files even if they appear in .gitignore
+	 code2nlm --force-ext .json --force-ext .lock`,
 	RunE: func(cmd *cobra.Command, args []string) error {
-		// If no flags were changed and no arguments provided, show help
-		if !cmd.Flags().Changed("input") &&
-			!cmd.Flags().Changed("output") &&
-			!cmd.Flags().Changed("max-sources") &&
-			!cmd.Flags().Changed("max-words") &&
-			!cmd.Flags().Changed("ignore-file") &&
-			!cmd.Flags().Changed("strategy") &&
-			len(args) == 0 {
-			return cmd.Help()
-		}
 		return runChunking()
 	},
 }
@@ -78,6 +72,7 @@ func init() {
 	rootCmd.Flags().IntVarP(&MaxWords, "max-words", "w", 100000, "Max word count per file")
 	rootCmd.Flags().StringVar(&IgnoreFile, "ignore-file", ".gitignore", "Path to ignore list")
 	rootCmd.Flags().StringVarP(&Strategy, "strategy", "s", "ast", "Chunking strategy (dir or ast)")
+	rootCmd.Flags().StringArrayVar(&ForceExts, "force-ext", []string{}, "Force-include files with this extension even if they match the ignore file (e.g. --force-ext .json). Repeatable. Hidden files (dot-prefixed) are still excluded.")
 }
 
 func runChunking() error {
@@ -85,7 +80,17 @@ func runChunking() error {
 	InputPath = filepath.Clean(strings.Trim(InputPath, "\" '"))
 	OutputPath = filepath.Clean(strings.Trim(OutputPath, "\" '"))
 
-	totalBytes, virtualTree, err := scanner.ScanDirectory(FS, InputPath, IgnoreFile)
+	// Normalise force-ext entries: lowercase, prepend '.' if missing
+	normalizedForceExts := make([]string, len(ForceExts))
+	for i, ext := range ForceExts {
+		ext = strings.ToLower(ext)
+		if !strings.HasPrefix(ext, ".") {
+			ext = "." + ext
+		}
+		normalizedForceExts[i] = ext
+	}
+
+	totalBytes, virtualTree, err := scanner.ScanDirectory(FS, InputPath, IgnoreFile, normalizedForceExts)
 	if err != nil {
 		return err
 	}

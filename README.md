@@ -133,6 +133,7 @@ Flags:
   -m, --max-sources int      Max number of output .md files (default 50)
   -w, --max-words int        Max word count per output file (default 100000)
       --ignore-file string   Path to ignore rules file (default ".gitignore")
+      --force-ext strings    Force-include files with this extension even if they match the ignore file (e.g. --force-ext .json). Repeatable. Hidden files (dot-prefixed) are still excluded.
   -s, --strategy string      Chunking strategy: "ast" or "dir" (default "ast")
   -h, --help                 help for code2nlm
 ```
@@ -320,6 +321,25 @@ __pycache__/
 - Hidden files and directories (names starting with `.`)
 - Binary and media files (`.exe`, `.png`, `.jpg`, `.mp4`, `.zip`, etc.)
 - Already processed output (`nlm_output/`)
+
+---
+
+## Force-adding Ignored Files
+
+Some files that are critical for LLM context (e.g., `.json` config files, generated `.d.ts` declarations, lock files) are often listed in `.gitignore` because they shouldn't be committed—but you may still want them in your NLM output. The `--force-ext` flag lets you force-include files with specific extensions, bypassing ignore-file rules.
+
+```bash
+# Force-include .json and .lock files even if they appear in .gitignore
+code2nlm --force-ext .json --force-ext .lock
+
+# Force-include multiple extension types
+code2nlm --force-ext .json --force-ext .lock --force-ext .d.ts
+
+# Combine with other options
+code2nlm -i ./project --force-ext .json --force-ext .lock -m 100
+```
+
+> **Warning:** Hidden files (dot-prefixed) are **still excluded** even if their extension matches `--force-ext`. Also be careful not to accidentally include sensitive non-hidden files (e.g., `secrets.json`) that happen to match ignore patterns you are overriding.
 
 ---
 
