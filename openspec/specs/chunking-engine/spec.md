@@ -1,23 +1,23 @@
 ## ADDED Requirements
 
 ### Requirement: Chunk Stream Partitioning
-The system SHALL group scanned files and generate chunk boundaries dynamically once a given file cluster reaches `--max-words`. Crucially, the filename of the output chunk SHALL NOT be a simple sequential integer (like `01_chunk.md`), but MUST reflect the lowest common ancestor directory path of all internal files, normalized with underscores and appended with a **zero-padded** sequence number for collisions (e.g. `src_utils_math_001.md`).
+The system SHALL group scanned files and generate chunk boundaries dynamically once a given file cluster reaches `--max-words`. The filename of the output chunk MUST be prefixed with the base name of the `--input` folder (the "folder name"), followed by an underscore, then the lowest common ancestor directory path of all internal files normalized with underscores, and finally a **zero-padded** sequence number for collisions. Format: `<folder-name>_<lca>_NNN.md` (e.g. `my-project_src_utils_math_001.md`).
 
 #### Scenario: Multi-File Split Boundary
 - **WHEN** current stream surpasses `--max-words`
-- **THEN** it safely concludes the active `0N_xxx.md` file and creates the next sequentially valid markdown file.
+- **THEN** it safely concludes the active chunk file and creates the next sequentially valid markdown file, both carrying the folder-name prefix.
 
 #### Scenario: Single Directory Chunk Naming
-- **WHEN** all files within a chunk share the `src/components/button` directory path
-- **THEN** the chunk safely concludes upon hitting `--max-words` and is explicitly named `src_components_button_001.md`
+- **WHEN** all files within a chunk share the `src/components/button` directory path and the input folder is `my-project`
+- **THEN** the chunk is explicitly named `my-project_src_components_button_001.md`
 
 #### Scenario: Same Directory Collision Name Iteration
 - **WHEN** a second chunk is generated from files exclusively within `src/components/button`
-- **THEN** the system increments the tracker to emit `src_components_button_002.md` (formatted securely via `%03d`)
+- **THEN** the system increments the tracker to emit `my-project_src_components_button_002.md` (formatted via `%03d`)
 
 #### Scenario: Distinct Directory Fallback
-- **WHEN** files from completely disjoint paths (e.g., `cmd/main.go` and `scanner/engine.go`) are packed into a single final leftover chunk
-- **THEN** their lowest common ancestor mathematically reduces to the root directory, yielding names like `root_001.md` or `global_001.md`
+- **WHEN** files from completely disjoint paths are packed into a single final leftover chunk and the input folder is `my-project`
+- **THEN** their lowest common ancestor reduces to root/global, yielding `my-project_global_001.md`
 
 ### Requirement: Contextual AST Parsing
 The system SHALL parse large single files using `smacker/go-tree-sitter` bindings to accurately split code precisely after function boundaries rather than completely haphazardly.

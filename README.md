@@ -2,7 +2,7 @@
 
 > **Transform entire code repositories into structured Markdown notebooks — optimized for NotebookLM, RAG pipelines, and any LLM that needs to reason over a full codebase.**
 
-`code2nlm` is a fast, local-only CLI tool that scans a source directory, intelligently chunks the code into token-bounded Markdown files, and produces a `000_Project_Index.md` as the master manifest. The result is a ready-to-upload notebook set that lets tools like Google NotebookLM "read" a project as if it were a collection of documents.
+`code2nlm` is a fast, local-only CLI tool that scans a source directory, intelligently chunks the code into token-bounded Markdown files, and produces a `<folder>_000_Project_Index.md` as the master manifest (where `<folder>` is the base name of the input directory). The result is a ready-to-upload notebook set that lets tools like Google NotebookLM "read" a project as if it were a collection of documents.
 
 ---
 
@@ -40,8 +40,8 @@ It solves several core problems:
 | No GitHub Direct Sync in NotebookLM | Converts repos into a "document" format NotebookLM understands |
 | NotebookLM File Count Limits | Packs many source files into a few large, token-efficient chunks |
 | Context Window Overhead | Strips noisy source maps, Base64 blobs, and hidden junk |
-| RAG Retrieval Ambiguity | Names chunks by directory (e.g., `src_utils_001.md`) for spatial context |
-| Lost Navigational Context | Includes a `000_Project_Index.md` master manifest |
+| RAG Retrieval Ambiguity & Conflict | Prefixes all output files with the folder name and directory path (e.g., `my-project_src_utils_001.md`) for clear source attribution |
+| Lost Navigational Context | Includes a `<folder>_000_Project_Index.md` master manifest |
 | Cross-platform Paths | Standardizes all paths to POSIX forward-slashes |
 
 ---
@@ -49,18 +49,18 @@ It solves several core problems:
 ## How It Works
 
 ```
-Your Repo/                         nlm_output/
-├── src/                  ──►      ├── 000_Project_Index.md   ← master file map
-│   ├── utils/                     ├── src_utils_001.md       ← chunked by directory
-│   ├── components/                ├── src_components_001.md
-│   └── ...                        ├── src_components_002.md
-├── tests/                         ├── tests_001.md
-└── ...                            └── global_001.md          ← cross-dir files
+my-project/                            nlm_output/
+├── src/                  ──►          ├── my-project_000_Project_Index.md   ← master file map
+│   ├── utils/                         ├── my-project_src_utils_001.md       ← prefixed & chunked by directory
+│   ├── components/                    ├── my-project_src_components_001.md
+│   └── ...                            ├── my-project_src_components_002.md
+├── tests/                             ├── my-project_tests_001.md
+└── ...                                └── my-project_global_001.md          ← cross-dir files
 ```
 
 1. **Scan** — Walks the input directory respecting `.gitignore` rules; collects file paths and byte sizes. Skips hidden files and binary/media extensions automatically.
-2. **Index** — Writes `000_Project_Index.md` listing every source file found.
-3. **Chunk** — Groups files into Markdown chunks within the `--max-words` budget. Each chunk is named after the **Lowest Common Ancestor (LCA)** directory of the files it contains, then suffixed with a zero-padded counter (`_001`, `_002` …) for correct lexicographical ordering.
+2. **Index** — Writes `<folder>_000_Project_Index.md` (prefixed with the input folder's base name) listing every source file found.
+3. **Chunk** — Groups files into Markdown chunks within the `--max-words` budget. Each chunk is prefixed with the input folder name and named after the **Lowest Common Ancestor (LCA)** directory of the files it contains (e.g. `<folder>_<lca>_001.md`), then suffixed with a zero-padded counter (`_001`, `_002` …) for correct lexicographical ordering.
 4. **Denoise** — Before writing, strips Base64 Data URIs and Source Map inline blobs to reclaim token budget.
 
 ---
@@ -174,10 +174,10 @@ code2nlm -i ./my-project -o ./nlm_output -m 100
 This creates a folder like:
 ```
 nlm_output/
-├── 000_Project_Index.md
-├── src_001.md
-├── src_components_001.md
-├── src_utils_001.md
+├── my-project_000_Project_Index.md
+├── my-project_src_001.md
+├── my-project_src_components_001.md
+├── my-project_src_utils_001.md
 └── ...
 ```
 
@@ -191,7 +191,7 @@ Click **"+ Add Source"** → **"Upload file"**.
 
 Select **all** `.md` files from your `nlm_output/` folder.
 
-> **Tip:** Always include `000_Project_Index.md` first — it contains the full file map and helps NotebookLM orient itself within the codebase.
+> **Tip:** Always include `<folder>_000_Project_Index.md` first — it contains the full file map and helps NotebookLM orient itself within the codebase.
 
 **Step 4: Ask Questions**
 
@@ -236,7 +236,7 @@ Each chunk file has a **structured header** that makes it ideal for vector embed
 ```markdown
 # Module: src_utils
 **Project**: my-project
-**Global Context**: Please refer to `000_Project_Index.md` for the complete directory structure.
+**Global Context**: Please refer to `my-project_000_Project_Index.md` for the complete directory structure.
 
 ## Included Paths in this Chunk
 * `src/utils/auth.ts`
@@ -249,11 +249,11 @@ Each chunk file has a **structured header** that makes it ideal for vector embed
 
 - **`# Module:`** → Use as document title for metadata
 - **`## Included Paths`** → Use as keyword tags for filtering  
-- **`000_Project_Index.md`** → Load first as the master context document
+- **`<folder>_000_Project_Index.md`** → Load first as the master context document
 
 ### With Claude / GPT / Gemini Chat
 
-1. Upload the `000_Project_Index.md` to give the model the full file map
+1. Upload the `<folder>_000_Project_Index.md` to give the model the full file map
 2. Paste or upload specific chunk files when asking about that module
 3. Reference the index when asking cross-cutting questions
 
@@ -261,9 +261,9 @@ Each chunk file has a **structured header** that makes it ideal for vector embed
 
 ## Output File Structure
 
-### `000_Project_Index.md` — The Master Index
+### `<folder>_000_Project_Index.md` — The Master Index
 
-Always generated first. Contains a flat list of every source file discovered:
+Always generated first. Prefixed with the input folder's base name (e.g., `my-project_000_Project_Index.md`). Contains a flat list of every source file discovered:
 
 ```markdown
 # Project Index
@@ -276,19 +276,19 @@ Always generated first. Contains a flat list of every source file discovered:
 ...
 ```
 
-This file is pinned at the top lexicographically (`000_` prefix) so RAG systems always retrieve it with highest priority.
+This file is pinned at the top of its project group lexicographically (`000_` suffix) so RAG systems always retrieve it with highest priority.
 
-### Chunk Files — e.g., `src_utils_001.md`
+### Chunk Files — e.g., `my-project_src_utils_001.md`
 
-Named after the **Lowest Common Ancestor** directory of contained files:
+Prefixed with the base name of the input folder and named after the **Lowest Common Ancestor** directory of contained files:
 
-| Chunk Name | What It Contains |
+| Chunk Name (`--input ./my-project`) | What It Contains |
 |---|---|
-| `global_001.md` | Files from diverse/root-level directories |
-| `src_001.md` | Top-level `src/` files |
-| `src_utils_001.md` | Files from `src/utils/` |
-| `src_components_001.md` | Files from `src/components/` |
-| `src_components_002.md` | Overflow from `src/components/` (next chunk) |
+| `my-project_global_001.md` | Files from diverse/root-level directories |
+| `my-project_src_001.md` | Top-level `src/` files |
+| `my-project_src_utils_001.md` | Files from `src/utils/` |
+| `my-project_src_components_001.md` | Files from `src/components/` |
+| `my-project_src_components_002.md` | Overflow from `src/components/` (next chunk) |
 
 The three-digit zero-padded counter (`_001`, `_002`) ensures correct alphabetical ordering in all file browsers and RAG systems.
 

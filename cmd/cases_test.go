@@ -57,11 +57,13 @@ func TestSmallFileGrouping(t *testing.T) {
 		t.Fatalf("Unexpected error: %v", err)
 	}
 
-	// Should be grouped into global_001.md
-	chunkPath := filepath.ToSlash(filepath.Join(OutputPath, "global_001.md"))
+	// Should be grouped into <projectName>_global_001.md
+	projectName := filepath.Base(filepath.Clean(InputPath))
+	chunkName := projectName + "_global_001.md"
+	chunkPath := filepath.ToSlash(filepath.Join(OutputPath, chunkName))
 	exists, _ := afero.Exists(FS, chunkPath)
 	if !exists {
-		t.Fatalf("Expected global_001.md to exist")
+		t.Fatalf("Expected %s to exist", chunkName)
 	}
 
 	content, _ := afero.ReadFile(FS, chunkPath)
@@ -86,7 +88,9 @@ func TestPathNormalizationDeep(t *testing.T) {
 
 	runChunking()
 
-	indexPath := filepath.ToSlash(filepath.Join(OutputPath, "000_Project_Index.md"))
+	projectName := filepath.Base(filepath.Clean(InputPath))
+	indexName := projectName + "_000_Project_Index.md"
+	indexPath := filepath.ToSlash(filepath.Join(OutputPath, indexName))
 	idx, _ := afero.ReadFile(FS, indexPath)
 	
 	if strings.Contains(string(idx), "\\") {

@@ -42,10 +42,11 @@ func (c *Chunker) Process(virtualTree []string) (int, error) {
 		prefixCounts[prefix]++
 		count := prefixCounts[prefix]
 
-		fileName := fmt.Sprintf("%s_%03d.md", prefix, count)
+		fileName := fmt.Sprintf("%s_%s_%03d.md", c.ProjectName, prefix, count)
 		filePath := strings.ReplaceAll(filepath.Join(c.OutputPath, fileName), "\\", "/")
 
-		header := markdown.FormatContextualHeader(prefix, count, -1, c.ProjectName, currentPaths)
+		indexFileName := fmt.Sprintf("%s_000_Project_Index.md", c.ProjectName)
+		header := markdown.FormatContextualHeader(prefix, count, -1, c.ProjectName, currentPaths, indexFileName)
 		finalContent := header + currentContent.String()
 
 		err := afero.WriteFile(c.FS, filePath, []byte(finalContent), 0644)

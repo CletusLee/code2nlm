@@ -103,7 +103,9 @@ func runChunking() error {
 		return fmt.Errorf(msg)
 	}
 
-	err = markdown.GenerateIndex(FS, OutputPath, virtualTree)
+	projectName := filepath.Base(filepath.Clean(InputPath))
+
+	err = markdown.GenerateIndex(FS, OutputPath, virtualTree, projectName)
 	if err != nil {
 		return err
 	}

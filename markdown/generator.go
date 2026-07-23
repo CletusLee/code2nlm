@@ -8,8 +8,8 @@ import (
 	"github.com/spf13/afero"
 )
 
-// GenerateIndex creates the 000_Project_Index.md file based on the virtual tree
-func GenerateIndex(fs afero.Fs, outpuDir string, virtualTree []string) error {
+// GenerateIndex creates the <projectName>_000_Project_Index.md file based on the virtual tree
+func GenerateIndex(fs afero.Fs, outpuDir string, virtualTree []string, projectName string) error {
 	// Robust normalization: filepath.ToSlash() on Linux is a no-op for backslashes.
 	// Force all backslashes to forward slashes for cross-platform consistency.
 	outDirNorm := strings.ReplaceAll(outpuDir, "\\", "/")
@@ -18,7 +18,8 @@ func GenerateIndex(fs afero.Fs, outpuDir string, virtualTree []string) error {
 		return err
 	}
 
-	indexPath := strings.ReplaceAll(filepath.Join(outDirNorm, "000_Project_Index.md"), "\\", "/")
+	indexName := fmt.Sprintf("%s_000_Project_Index.md", projectName)
+	indexPath := strings.ReplaceAll(filepath.Join(outDirNorm, indexName), "\\", "/")
 	
 	var sb strings.Builder
 	sb.WriteString("# Project Index\n\n")
@@ -33,7 +34,7 @@ func GenerateIndex(fs afero.Fs, outpuDir string, virtualTree []string) error {
 }
 
 // FormatContextualHeader generates the standardized header injected into each chunk.
-func FormatContextualHeader(domainName string, part int, totalParts int, projectName string, paths []string) string {
+func FormatContextualHeader(domainName string, part int, totalParts int, projectName string, paths []string, indexFileName string) string {
 	var sb strings.Builder
 	
 	partStr := ""
@@ -43,7 +44,7 @@ func FormatContextualHeader(domainName string, part int, totalParts int, project
 
 	sb.WriteString(fmt.Sprintf("# Module: %s%s\n", domainName, partStr))
 	sb.WriteString(fmt.Sprintf("**Project**: %s\n", projectName))
-	sb.WriteString("**Global Context**: Please refer to `000_Project_Index.md` for the complete directory structure and dependency map.\n\n")
+	sb.WriteString(fmt.Sprintf("**Global Context**: Please refer to `%s` for the complete directory structure and dependency map.\n\n", indexFileName))
 	
 	sb.WriteString("## Included Paths in this Chunk\n")
 	for _, p := range paths {
